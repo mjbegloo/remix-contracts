@@ -1,0 +1,158 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Open Contracts in Remix</title>
+  </head>
+  <body>
+    <h2>🧾 Click a contract to copy and open Remix</h2>
+
+    <button onclick="copyAndOpen('counter')">📋 Counter</button>
+    <button onclick="copyAndOpen('token')">📋 Token</button>
+    <button onclick="copyAndOpen('nft')">📋 MyNFT</button>
+    <button onclick="copyAndOpen('dao')">📋 SimpleDAO</button>
+    <button onclick="copyAndOpen('batch')">📋 BatchInteractor</button>
+
+
+    <script>
+      const contracts = {
+        counter: `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Counter {
+    uint public count;
+
+    function increment() public {
+        count++;
+    }
+
+    function get() public view returns (uint) {
+        return count;
+    }
+}
+`,
+
+        token: `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+contract Token is ERC20 {
+    constructor(string memory name, string memory symbol, uint8 decimals_, uint256 initialSupply) ERC20(name, symbol) {
+        _mint(msg.sender, initialSupply);
+        _setupDecimals(decimals_);
+    }
+
+    function _setupDecimals(uint8 decimals_) internal {
+        assembly {
+            sstore(0x0, decimals_)
+        }
+    }
+}
+`,
+
+        nft: `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+
+contract MyNFT is ERC721URIStorage {
+    uint256 private _tokenIds;
+
+    constructor(string memory name, string memory symbol) ERC721(name, symbol) {}
+
+    function mint(address to, string memory uri) public returns (uint256) {
+        _tokenIds++;
+        uint256 newItemId = _tokenIds;
+        _mint(to, newItemId);
+        _setTokenURI(newItemId, uri);
+        return newItemId;
+    }
+}
+`,
+
+        dao: `// SPDX-License-Identifier: MIT
+        batch: `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+interface ICounter {
+    function increment() external;
+}
+
+interface IMyNFT {
+    function mint(address to, string calldata uri) external returns (uint256);
+}
+
+interface ISimpleDAO {
+    function vote(uint option) external;
+}
+
+contract BatchInteractor {
+    function batchIncrement(address counterAddr, uint count) external {
+        ICounter counter = ICounter(counterAddr);
+        for (uint i = 0; i < count; i++) {
+            counter.increment();
+        }
+    }
+
+    function batchVote(address daoAddr, uint option, uint times) external {
+        ISimpleDAO dao = ISimpleDAO(daoAddr);
+        for (uint i = 0; i < times; i++) {
+            dao.vote(option);
+        }
+    }
+
+    function batchMintNFT(address nftAddr, uint count) external {
+        IMyNFT nft = IMyNFT(nftAddr);
+        for (uint i = 0; i < count; i++) {
+            string memory uri = string(abi.encodePacked("https://meta.fake/", uint2str(block.timestamp + i), ".json"));
+            nft.mint(msg.sender, uri);
+        }
+    }
+
+    function uint2str(uint _i) internal pure returns (string memory str) {
+        if (_i == 0) return "0";
+        uint j = _i;
+        uint len;
+        while (j != 0) {
+            len++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(len);
+        uint k = len;
+        while (_i != 0) {
+            k = k - 1;
+            uint8 temp = uint8(48 + _i % 10);
+            bstr[k] = bytes1(temp);
+            _i /= 10;
+        }
+        str = string(bstr);
+    }
+}
+`,
+
+pragma solidity ^0.8.0;
+
+contract SimpleDAO {
+    mapping(uint => uint) public votes;
+
+    function vote(uint option) public {
+        votes[option]++;
+    }
+
+    function getVotes(uint option) public view returns (uint) {
+        return votes[option];
+    }
+}
+`,
+      };
+
+      async function copyAndOpen(name) {
+        await navigator.clipboard.writeText(contracts[name]);
+        alert("✅ Contract copied to clipboard! Paste it in Remix.");
+        window.open("https://remix.ethereum.org", "_blank");
+      }
+    </script>
+  </body>
+</html>
